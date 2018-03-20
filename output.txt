@@ -1,0 +1,86 @@
+2018-03-19 20:37:33.545134: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1 instructions, but these are available on your machine and could speed up CPU computations.
+2018-03-19 20:37:33.545676: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.2 instructions, but these are available on your machine and could speed up CPU computations.
+2018-03-19 20:37:33.545685: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX instructions, but these are available on your machine and could speed up CPU computations.
+2018-03-19 20:37:33.545691: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX2 instructions, but these are available on your machine and could speed up CPU computations.
+2018-03-19 20:37:33.545696: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use FMA instructions, but these are available on your machine and could speed up CPU computations.
+run.py:14: UserWarning: No GPU found. Please use a GPU to train your neural network.
+  warnings.warn('No GPU found. Please use a GPU to train your neural network.')
+/Users/JackSu/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+Traceback (most recent call last):
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1039, in _do_call
+    return fn(*args)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1021, in _run_fn
+    status, run_metadata)
+  File "/Users/JackSu/anaconda3/lib/python3.6/contextlib.py", line 88, in __exit__
+    next(self.gen)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/errors_impl.py", line 466, in raise_exception_on_not_ok_status
+    pywrap_tensorflow.TF_GetCode(status))
+tensorflow.python.framework.errors_impl.FailedPreconditionError: Attempting to use uninitialized value conv2d/kernel
+	 [[Node: conv2d/kernel/read = Identity[T=DT_FLOAT, _class=["loc:@conv2d/kernel"], _device="/job:localhost/replica:0/task:0/cpu:0"](conv2d/kernel)]]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "run.py", line 176, in <module>
+    run()
+  File "run.py", line 166, in run
+    correct_label, keep_prob, learning_rate)
+  File "run.py", line 121, in train_nn
+    loss, _ = sess.run([cross_entropy_loss, train_op], feed_dict = feed_dict)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 778, in run
+    run_metadata_ptr)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 982, in _run
+    feed_dict_string, options, run_metadata)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1032, in _do_run
+    target_list, options, run_metadata)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1052, in _do_call
+    raise type(e)(node_def, op, message)
+tensorflow.python.framework.errors_impl.FailedPreconditionError: Attempting to use uninitialized value conv2d/kernel
+	 [[Node: conv2d/kernel/read = Identity[T=DT_FLOAT, _class=["loc:@conv2d/kernel"], _device="/job:localhost/replica:0/task:0/cpu:0"](conv2d/kernel)]]
+
+Caused by op 'conv2d/kernel/read', defined at:
+  File "run.py", line 176, in <module>
+    run()
+  File "run.py", line 160, in run
+    layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
+  File "run.py", line 59, in layers
+    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/convolutional.py", line 511, in conv2d
+    return layer.apply(inputs)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/base.py", line 320, in apply
+    return self.__call__(inputs, **kwargs)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/base.py", line 286, in __call__
+    self.build(input_shapes[0])
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/convolutional.py", line 138, in build
+    dtype=self.dtype)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variable_scope.py", line 1049, in get_variable
+    use_resource=use_resource, custom_getter=custom_getter)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variable_scope.py", line 948, in get_variable
+    use_resource=use_resource, custom_getter=custom_getter)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variable_scope.py", line 349, in get_variable
+    validate_shape=validate_shape, use_resource=use_resource)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/base.py", line 275, in variable_getter
+    variable_getter=functools.partial(getter, **kwargs))
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/layers/base.py", line 228, in _add_variable
+    trainable=trainable and self.trainable)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variable_scope.py", line 341, in _true_getter
+    use_resource=use_resource)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variable_scope.py", line 714, in _get_single_variable
+    validate_shape=validate_shape)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variables.py", line 197, in __init__
+    expected_shape=expected_shape)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variables.py", line 316, in _init_from_args
+    self._snapshot = array_ops.identity(self._variable, name="read")
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_array_ops.py", line 1338, in identity
+    result = _op_def_lib.apply_op("Identity", input=input, name=name)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py", line 768, in apply_op
+    op_def=op_def)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 2336, in create_op
+    original_op=self._default_original_op, op_def=op_def)
+  File "/Users/JackSu/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 1228, in __init__
+    self._traceback = _extract_stack()
+
+FailedPreconditionError (see above for traceback): Attempting to use uninitialized value conv2d/kernel
+	 [[Node: conv2d/kernel/read = Identity[T=DT_FLOAT, _class=["loc:@conv2d/kernel"], _device="/job:localhost/replica:0/task:0/cpu:0"](conv2d/kernel)]]
+
