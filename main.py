@@ -6,7 +6,6 @@ from distutils.version import LooseVersion
 import project_tests as tests
 
 
-# Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
 
@@ -33,7 +32,15 @@ def load_vgg(sess, vgg_path):
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
     
-    return None, None, None, None, None
+    tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+    graph = tf.get_default_graph()
+    w1 = graph.get_tensor_by_name(vgg_input_tensor_name)
+    keep = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
+    layer3 = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
+    layer4 = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
+    layer7 = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+    
+    return w1, keep, layer3, layer4, layer7
 tests.test_load_vgg(load_vgg, tf)
 
 
@@ -47,9 +54,30 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    return None
+    
+    layer7_conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same',
+                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    layer7_output = tf.layers.conv2d_transpose(layer7_conv_1x1, num_classes, 4, 2, padding='same',
+                                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    
+    
+    layer4_conv_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same',
+                                       kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    
+    skip_1 = tf.add(layer7_output, layer4_conv_1x1)
+    skip_1_up = tf.layers.conv2d_transpose(skip_1, num_classes, 4, 2, padding='same',
+                                           kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3)) 
+    
+    layer3_out = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same',
+                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    
+    skip_2 = tf.add(skip_1_up, layer3_out)
+    skip_2_up = tf.layers.conv2d_transpose(skip_2, num_classes, 16, 8, padding='same',
+                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    
+    
+    return skip_2_up
 tests.test_layers(layers)
-
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
@@ -61,16 +89,22 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
     # TODO: Implement function
-    return None, None, None
-tests.test_optimize(optimize)
+    
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    labels = tf.reshape(correct_label, (-1, num_classes))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    optimizer = tf.train.AdamOptimizer(learning_rate)
+    train_op = optimizer.minimize(cross_entropy_loss)
+    return logits, train_op, cross_entropy_loss
 
+tests.test_optimize(optimize)
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
              correct_label, keep_prob, learning_rate):
     """
     Train neural network and print out the loss during training.
     :param sess: TF Session
-    :param epochs: Number of epochs
+        :param epochs: Number of epochs
     :param batch_size: Batch size
     :param get_batches_fn: Function to get batches of training data.  Call using get_batches_fn(batch_size)
     :param train_op: TF Operation to train the neural network
@@ -81,9 +115,14 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    pass
-tests.test_train_nn(train_nn)
+    for epoch in range(epochs):
+        for X, y in get_batches_fn(batch_size):  
+            feed_dict={input_image: X, correct_label: y, learning_rate: 0.001, keep_prob: 0.75}
+            loss, _ = sess.run([cross_entropy_loss, train_op], feed_dict = feed_dict)
+            print("Epoch {}; Loss {:.5f}".format(epoch, loss))
+  
 
+tests.test_train_nn(train_nn)
 
 def run():
     num_classes = 2
@@ -99,6 +138,11 @@ def run():
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
 
+    keep_prob = tf.placeholder(tf.float32)
+    learning_rate = tf.placeholder(tf.float32)
+    epochs = 15 
+    batch_size = 5
+
     with tf.Session() as sess:
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
@@ -109,14 +153,25 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
-
+        input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_path)
+        layer_output = layers(layer3_out, layer4_out, layer7_out, num_classes)
         # TODO: Train NN using the train_nn function
+        correct_label = tf.placeholder(tf.int32, (None, image_shape[0], image_shape[1], num_classes))
+        logits, train_op, cross_entropy_loss = optimize(layer_output, correct_label, learning_rate, num_classes)
+        
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
+             correct_label, keep_prob, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
         # OPTIONAL: Apply the trained model to a video
 
 
 if __name__ == '__main__':
     run()
+print("Done")
+
